@@ -2,7 +2,7 @@
     package:
       name: unzip
 
-  - name: Install Nagios (Ubuntu)
+  - name: Install Nagios (CentOS)
     unarchive:
       src: https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz
       dest: /usr/local/bin
@@ -11,13 +11,13 @@
       owner: root
       group: root
 
-  - name: Install Nagios Package (Ubuntu)
-    tags: ubuntu, nagios
-    apt:
+  - name: Install Nagios Package (CentOS)
+    tags: centOS, nagios
+    dnf:
       name:
-        - libgd-dev
-        - libssl-dev
         - php-gd
         - php
       state: latest
-    when: ansible_distribution == "Ubuntu"
+    when: ansible_distribution == "CentOS"
+
+
