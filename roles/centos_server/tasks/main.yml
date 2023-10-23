@@ -2,22 +2,114 @@
     package:
       name: unzip
 
-  - name: Install Nagios (CentOS)
+  - name: Download Nagios (CentOS)
     unarchive:
-      src: https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz
+      src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
       dest: /usr/local/bin
       remote_src: yes
-      mode: 0755
+      mode: 0777
       owner: root
       group: root
 
-  - name: Install Nagios Package (CentOS)
-    tags: centOS, nagios
+  - name: Download Nagios Plugins (CentOS)
+    unarchive:
+      src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.3.3.tar.gz
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: 0777
+      owner: root
+      group: root
+
+  - name: Download Nagios Packages (CentOS)
+    tags: centos, nagios, packages
     dnf:
       name:
+        - gcc
+        - glibc
+        - glibc-common
+        - make
+        - gettext
+        - automake
+        - autoconf
+        - openssl-devel
+        - net-snmp
+        - net-snmp-utils
+        - epel-release
+        - wget
+        - unzip
+        - httpd
+        - php
+        - gd
+        - gd-devel
+        - perl
+        - postfix
+        - curl
+        - openssl
+        - php-gd
+        - autoconf
+        - automake
+        - bc
+        - gawk
+        - gcc
+        - gd
+        - gd-devel
+        - gettext
+        - glibc
+        - glibc-common
+        - httpd
+        - make
+        - net-snmp
+        - net-snmp-utils
+        - openssl
+        - openssl-devel
+        - perl
         - php-gd
         - php
+        - python3
+        - python3-pip
+        - unzip
+        - wget
       state: latest
     when: ansible_distribution == "CentOS"
 
 
+  - name: Adding Groups (CentOS)
+    tags: group
+    shell: |
+      cd /usr/local/bin/nagioscore-*
+      ./configure
+      make all
+      make install-group-users
+      usermod -a -G nagios apache
+      make install
+      make install-daemoninit
+      make install-commandmode
+      make install-config
+      make install-webconf
+
+  - name: Compiling Plugins (CentOS)
+    shell: |
+      cd /usr/local/bin/nagios-plugins*
+      ./tools/setup
+      ./configure
+      make
+      make install
+
+  - name: Restarting Apache (CentOS)
+    tags: apache
+    service:
+      name: httpd
+      state: restarted
+      enabled: true
+
+  - name: Download passlib
+    pip:
+      name: passlib
+      state: latest
+    when: ansible_distribution == "CentOS"
+
+  - name: Adding Nagios User (CentOS)
+    community.general.htpasswd:
+      path: /usr/local/nagios/etc/htpasswd.users
+      name: roseann
+      password: roseann

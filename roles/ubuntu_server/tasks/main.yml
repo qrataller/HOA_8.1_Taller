@@ -2,22 +2,99 @@
     package:
       name: unzip
 
-  - name: Install Nagios (Ubuntu)
+  - name: Download Nagios (Ubuntu)
     unarchive:
-      src: https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz
+      src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
       dest: /usr/local/bin
       remote_src: yes
-      mode: 0755
+      mode: 0777
       owner: root
       group: root
 
-  - name: Install Nagios Package (Ubuntu)
-    tags: ubuntu, nagios
+  - name: Download Nagios Plugins (Ubuntu)
+    unarchive:
+      src: https://github.com/nagios-plugins/nagios-plugins/archive/release-2.3.3.tar.gz
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: 0777
+      owner: root
+      group: root
+
+  - name: Download Nagios Packages (Ubuntu)
+    tags: ubuntu, nagios, packages
     apt:
       name:
+        - wget
+        - unzip
+        - curl
+        - openssl
+        - build-essential
         - libgd-dev
         - libssl-dev
+        - libapache2-mod-php
         - php-gd
         - php
+        - apache2
+        - autoconf
+        - automake
+        - apache2
+        - bc
+        - build-essential
+        - dc
+        - gawk
+        - gcc
+        - gettext
+        - libc6
+        - libgd-dev
+        - libnet-snmp-perl
+        - libssl-dev
+        - make
+        - openssl
+        - python3
+        - python3-pip
+        - php-gd
+        - php
+        - perl
+        - snmp
+        - curl
+        - unzip
+        - wget
       state: latest
     when: ansible_distribution == "Ubuntu"
+
+  - name: Adding Groups (Ubuntu)
+    tags: group
+    shell: |
+      cd /usr/local/bin/nagioscore-*
+      ./tools/setup
+      ./configure
+      make all
+      make install-group-users
+      usermod -a -G nagios www-data
+      make install
+      make install-init
+      make install-commandmode
+      make install-config
+      make intall-webconf
+      a2enmod rewrite
+      a2enmod cgi
+
+  - name: Compiling Plugins (Ubuntu)
+    shell: |
+      cd /usr/local/bin/nagios-plugins*
+      ./tools/setup
+      ./configure
+      make
+      make install
+
+  - name: Restarting Apache (Ubuntu)
+    service:
+      name: apache2
+      state: restarted
+      enabled: true
+
+  - name: Adding Nagios User (Ubuntu)
+    community.general.htpasswd:
+      path: /usr/local/nagios/etc/htpasswd.users
+      name: roseann
+      password: roseann
